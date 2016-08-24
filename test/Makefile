@@ -1,5 +1,5 @@
 .PHONY: all
-all: prepare memory_test alu_test
+all: prepare memory_test alu_test regfile_test
 
 prepare:
 	mkdir -p out
@@ -12,3 +12,4 @@ clean:
 
 memory_test: memory_test.v ../memory.v
 alu_test: alu_test.v ../alu.v
+regfile_test: regfile_test.v ../regfile.v
