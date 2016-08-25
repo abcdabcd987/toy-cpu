@@ -2,8 +2,10 @@ module regfile (
     input      [ 4:0] waddr ,
     input      [31:0] wdata ,
     input             we    ,
+    input re1,
     input      [ 4:0] raddr1,
     output reg [31:0] rdata1,
+    input re2,
     input      [ 4:0] raddr2,
     output reg [31:0] rdata2,
     input             clk   ,
@@ -19,7 +21,7 @@ module regfile (
     end
 
     always @* begin
-        if (rst || raddr1 == 0) begin
+        if (rst || raddr1 == 0 || !re1) begin
             rdata1 <= 0;
         end else if (we && waddr == raddr1) begin
             rdata1 <= wdata;
@@ -29,7 +31,7 @@ module regfile (
     end
 
     always @* begin
-        if (rst || raddr2 == 0) begin
+        if (rst || raddr2 == 0 || !re2) begin
             rdata2 <= 0;
         end else if (we && waddr == raddr2) begin
             rdata2 <= wdata;
