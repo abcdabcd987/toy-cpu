@@ -48,6 +48,16 @@ module openmips (
     wire        id_idex_we    ;
     wire [ 4:0] id_idex_waddr ;
 
+    // EX -> ID
+    wire        ex_id_we   ;
+    wire [ 4:0] ex_id_waddr;
+    wire [31:0] ex_id_wdata;
+
+    // MEM -> ID
+    wire        mem_id_we   ;
+    wire [ 4:0] mem_id_waddr;
+    wire [31:0] mem_id_wdata;
+
     // ID
     stage_id stage_id (
         .pc       (ifid_id_pc    ),
@@ -64,6 +74,12 @@ module openmips (
         .opv2     (id_idex_opv2  ),
         .we       (id_idex_we    ),
         .waddr    (id_idex_waddr ),
+        .ex_we    (ex_id_we      ),
+        .ex_waddr (ex_id_waddr   ),
+        .ex_wdata (ex_id_wdata   ),
+        .mem_we   (mem_id_we     ),
+        .mem_waddr(mem_id_waddr  ),
+        .mem_wdata(mem_id_wdata  ),
         .rst      (rst           )
     );
 
@@ -97,6 +113,9 @@ module openmips (
     wire        ex_exmem_we   ;
     wire [ 4:0] ex_exmem_waddr;
     wire [31:0] ex_exmem_wdata;
+    assign ex_id_we    = ex_exmem_we   ;
+    assign ex_id_waddr = ex_exmem_waddr;
+    assign ex_id_wdata = ex_exmem_wdata;
 
     // EX
     stage_ex stage_ex (
@@ -133,6 +152,9 @@ module openmips (
     wire        mem_memwb_we   ;
     wire [ 4:0] mem_memwb_waddr;
     wire [31:0] mem_memwb_wdata;
+    assign mem_id_we    = mem_memwb_we   ;
+    assign mem_id_waddr = mem_memwb_waddr;
+    assign mem_id_wdata = mem_memwb_wdata;
 
     // MEM
     stage_mem stage_mem (

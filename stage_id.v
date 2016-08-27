@@ -13,12 +13,18 @@ module stage_id (
     output reg [31:0] opv2     ,
     output reg        we       ,
     output reg [ 4:0] waddr    ,
+    input             ex_we    ,
+    input      [ 4:0] ex_waddr ,
+    input      [31:0] ex_wdata ,
+    input             mem_we   ,
+    input      [ 4:0] mem_waddr,
+    input      [31:0] mem_wdata,
     input             rst
 );
 
-    reg [31:0] imm       ;
-    reg        inst_valid;
-    wire [6:0] op;
+    reg  [31:0] imm       ;
+    reg         inst_valid;
+    wire [ 6:0] op        ;
     assign op = inst[31:26];
 
     always @* begin
@@ -52,19 +58,19 @@ module stage_id (
     end
 
     always @* begin
-        if (rst) begin
-            opv1 <= 0;
-        end else begin
-            opv1 <= re1 ? reg_data1 : imm;
-        end
+        if (rst) opv1 <= 0;
+        else if (!re1) opv1 <= imm;
+        else if (ex_we && ex_waddr == reg_addr1) opv1 <= ex_wdata;
+        else if (mem_we && mem_waddr == reg_addr1) opv1 <= mem_wdata;
+        else opv1 <= reg_data1;
     end
 
     always @* begin
-        if (rst) begin
-            opv2 <= 0;
-        end else begin
-            opv2 <= re2 ? reg_data2 : imm;
-        end
+        if (rst) opv2 <= 0;
+        else if (!re2) opv2 <= imm;
+        else if (ex_we && ex_waddr == reg_addr2) opv2 <= ex_wdata;
+        else if (mem_we && mem_waddr == reg_addr2) opv2 <= mem_wdata;
+        else opv2 <= reg_data2;
     end
 
 
