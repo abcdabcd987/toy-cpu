@@ -6,7 +6,8 @@ module memory (
     input         clk
 );
 
-    reg [31:0] memory[0:1024];
+    reg  [31:0] memory  [0:1023];
+    wire [31:0] data_out        ;
 
     assign data_out = memory[addr>>2];
 

@@ -10,10 +10,10 @@ module ori_test();
     initial begin
         $dumpfile("ori_test.vcd");
         $dumpvars(0, ori_test);
-        for (i = 0; i < 4; i = i+1)
+        for (i = 2; i <= 5; i = i+1)
             $dumpvars(0, top.openmips.regfile.regs[i]);
 
-        $readmemb("../data/ori_inst.txt", top.ram.memory, 0, 3);
+        $readmemh("../data/ori.txt", top.ram.memory, 0, 3);
 
         clk = 0;
         rst = 1;

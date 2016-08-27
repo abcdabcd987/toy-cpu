@@ -5,7 +5,7 @@ prepare:
 	mkdir -p out
 
 clean:
-	rm -rf out/
+	rm -rf out/ *.vcd
 
 %_test:
 	iverilog -o out/$@ -g2009 $^
