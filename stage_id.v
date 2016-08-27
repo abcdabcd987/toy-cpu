@@ -12,12 +12,13 @@ module stage_id (
     output reg [31:0] opv1     ,
     output reg [31:0] opv2     ,
     output reg        we       ,
-    output reg [ 5:0] waddr    ,
+    output reg [ 4:0] waddr    ,
     input             rst
 );
 
     reg [31:0] imm       ;
     reg        inst_valid;
+    wire [6:0] op;
     assign op = inst[31:26];
 
     always @* begin
@@ -29,8 +30,13 @@ module stage_id (
             imm        <= 0;
             inst_valid <= 1;
         end else begin
-            reg_addr1 <= inst[25:21];
-            reg_addr2 <= inst[20:16];
+            alusel     <= 0; aluop <= 0; // nop
+            we         <= 0; waddr <= 0;
+            re1        <= 0; re2   <= 0;
+            imm        <= 0;
+            inst_valid <= 0;
+            reg_addr1  <= inst[25:21];
+            reg_addr2  <= inst[20:16];
 
             case (op)
                 6'b001101 : begin // ori
@@ -40,13 +46,6 @@ module stage_id (
                     re1        <= 1; re2 <= 0;
                     imm        <= {16'h0, inst[15:0]};
                     inst_valid <= 1;
-                end
-                default : begin // invalid
-                    alusel     <= 0; aluop <= 0;
-                    waddr      <= 0; we <= 0;
-                    re1        <= 0; re2 <= 0;
-                    imm        <= 0;
-                    inst_valid <= 0;
                 end
             endcase
         end

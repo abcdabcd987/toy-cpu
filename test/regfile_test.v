@@ -2,18 +2,19 @@ module regfile_test();
 
     reg [31:0] wdata, rdata1, rdata2;
     reg [ 4:0] waddr, raddr1, raddr2;
-    reg        we, clk, rst;
+    reg        we, re1, re2, clk, rst;
 
     regfile regfile (
-        waddr, wdata, we,
-        raddr1, rdata1, raddr2, rdata2,
+        we, waddr, wdata,
+        re1, raddr1, rdata1,
+        re2, raddr2, rdata2,
         clk, rst
     );
 
     always #1 clk = ~clk;
 
     initial begin
-        clk = 0; rst = 0; we = 0;
+        clk = 0; rst = 0; we = 0; re1 = 1; re2 = 1;
         @(posedge clk); @(negedge clk);
 
         wdata = 123456; waddr = 19; we = 1;
