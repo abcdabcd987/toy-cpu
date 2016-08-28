@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-module ori_forwarding_test();
+module inst_logic_test();
     reg     clk, rst;
     integer i  ;
 
@@ -8,12 +8,12 @@ module ori_forwarding_test();
 
     always #1 clk = ~clk;
     initial begin
-        $dumpfile("ori_forwarding_test.vcd");
+        $dumpfile("inst_logic_test.vcd");
         $dumpvars;
-        for (i = 2; i <= 5; i = i+1)
+        for (i = 1; i <= 4; i = i+1)
             $dumpvars(0, top.openmips.regfile.regs[i]);
 
-        $readmemh("../data/ori_forwarding.txt", top.ram.memory, 0, 6);
+        $readmemh("../data/inst_logic.txt", top.ram.memory, 0, 8);
 
         clk = 0;
         rst = 1;
