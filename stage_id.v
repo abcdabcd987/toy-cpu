@@ -36,6 +36,7 @@ module stage_id (
     wire [ 4:0] rd       = inst[15:11];
     wire [ 5:0] sa       = inst[10:6] ;
     wire [15:0] inst_imm = inst[15:0] ;
+    wire [31:0] sext_imm = {{16{inst[15]}}, inst[15:0]};
 
     `define SET_INST(i_aluop, i_alusel, i_re1, i_reg_addr1, i_re2, i_reg_addr2, i_we, i_waddr, i_imm, i_inst_valid) do begin \
         aluop      <= i_aluop     ; \
@@ -74,12 +75,29 @@ module stage_id (
                     `EXE_MTLO : `SET_INST(`EXE_MTLO_OP, `EXE_RES_MOVE , 1, rs, 0, rt, 0, rd, 0 , 1);
                     `EXE_MOVN : `SET_INST(`EXE_MOVN_OP, `EXE_RES_MOVE , 1, rs, 1, rt, opv2 != 0, rd, 0, 1);
                     `EXE_MOVZ : `SET_INST(`EXE_MOVZ_OP, `EXE_RES_MOVE , 1, rs, 1, rt, opv2 == 0, rd, 0, 1);
+                    `EXE_SLT  : `SET_INST(`EXE_SLT_OP , `EXE_RES_ARITH, 1, rs, 1, rt, 1, rd, 0, 1);
+                    `EXE_SLTU : `SET_INST(`EXE_SLTU_OP, `EXE_RES_ARITH, 1, rs, 1, rt, 1, rd, 0, 1);
+                    `EXE_ADD  : `SET_INST(`EXE_ADD_OP , `EXE_RES_ARITH, 1, rs, 1, rt, 1, rd, 0, 1);
+                    `EXE_ADDU : `SET_INST(`EXE_ADDU_OP, `EXE_RES_ARITH, 1, rs, 1, rt, 1, rd, 0, 1);
+                    `EXE_SUB  : `SET_INST(`EXE_SUB_OP , `EXE_RES_ARITH, 1, rs, 1, rt, 1, rd, 0, 1);
+                    `EXE_SUBU : `SET_INST(`EXE_SUBU_OP, `EXE_RES_ARITH, 1, rs, 1, rt, 1, rd, 0, 1);
+                    `EXE_MULT : `SET_INST(`EXE_MULT_OP, `EXE_RES_ARITH, 1, rs, 1, rt, 1, rd, 0, 1);
+                    `EXE_MULTU:`SET_INST(`EXE_MULTU_OP, `EXE_RES_ARITH, 1, rs, 1, rt, 1, rd, 0, 1);
                 endcase
-                `EXE_ORI  : `SET_INST(`EXE_OR_OP,  `EXE_RES_LOGIC, 1, rs, 0, 0 , 1, rt, ({16'h0, inst_imm}), 1);
-                `EXE_ANDI : `SET_INST(`EXE_AND_OP, `EXE_RES_LOGIC, 1, rs, 0, 0 , 1, rt, ({16'h0, inst_imm}), 1);
-                `EXE_XORI : `SET_INST(`EXE_XOR_OP, `EXE_RES_LOGIC, 1, rs, 0, 0 , 1, rt, ({16'h0, inst_imm}), 1);
-                `EXE_LUI  : `SET_INST(`EXE_OR_OP , `EXE_RES_LOGIC, 1, rs, 0, 0 , 1, rt, ({inst_imm, 16'h0}), 1);
-                `EXE_PREF : `SET_INST(`EXE_NOP_OP, `EXE_RES_NOP  , 0, rs, 0, rt, 0, rd, 0                  , 1);
+                `EXE_SPECIAL2_INST: case (opx)
+                    `EXE_CLZ  : `SET_INST(`EXE_CLZ_OP , `EXE_RES_ARITH, 1, rs, 0, rt, 1, rd, 0, 1);
+                    `EXE_CLO  : `SET_INST(`EXE_CLO_OP , `EXE_RES_ARITH, 1, rs, 0, rt, 1, rd, 0, 1);
+                    `EXE_MUL  : `SET_INST(`EXE_MUL_OP , `EXE_RES_MUL  , 1, rs, 1, rt, 1, rd, 0, 1);
+                endcase
+                `EXE_ORI  : `SET_INST(`EXE_OR_OP  , `EXE_RES_LOGIC, 1, rs, 0, 0 , 1, rt, ({16'h0, inst_imm}), 1);
+                `EXE_ANDI : `SET_INST(`EXE_AND_OP , `EXE_RES_LOGIC, 1, rs, 0, 0 , 1, rt, ({16'h0, inst_imm}), 1);
+                `EXE_XORI : `SET_INST(`EXE_XOR_OP , `EXE_RES_LOGIC, 1, rs, 0, 0 , 1, rt, ({16'h0, inst_imm}), 1);
+                `EXE_LUI  : `SET_INST(`EXE_OR_OP  , `EXE_RES_LOGIC, 1, rs, 0, 0 , 1, rt, ({inst_imm, 16'h0}), 1);
+                `EXE_PREF : `SET_INST(`EXE_NOP_OP , `EXE_RES_NOP  , 0, rs, 0, 0 , 0, rt, 0                  , 1);
+                `EXE_SLTI : `SET_INST(`EXE_SLT_OP , `EXE_RES_ARITH, 1, rs, 0, 0 , 1, rt, sext_imm           , 1);
+                `EXE_SLTIU: `SET_INST(`EXE_SLTU_OP, `EXE_RES_ARITH, 1, rs, 0, 0 , 1, rt, sext_imm           , 1);
+                `EXE_ADDI : `SET_INST(`EXE_ADDI_OP, `EXE_RES_ARITH, 1, rs, 0, 0 , 1, rt, sext_imm           , 1);
+                `EXE_ADDIU: `SET_INST(`EXE_ADDIU_OP,`EXE_RES_ARITH, 1, rs, 0, 0 , 1, rt, sext_imm           , 1);
             endcase
         end
     end
