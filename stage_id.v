@@ -1,26 +1,32 @@
 `include "consts.v"
 
 module stage_id (
-    input      [31:0] pc       ,
-    input      [31:0] inst     ,
-    output reg        re1      ,
-    input      [31:0] reg_data1,
-    output reg [ 4:0] reg_addr1,
-    output reg        re2      ,
-    input      [31:0] reg_data2,
-    output reg [ 4:0] reg_addr2,
-    output reg [ 7:0] aluop    ,
-    output reg [ 2:0] alusel   ,
-    output reg [31:0] opv1     ,
-    output reg [31:0] opv2     ,
-    output reg        we       ,
-    output reg [ 4:0] waddr    ,
-    input             ex_we    ,
-    input      [ 4:0] ex_waddr ,
-    input      [31:0] ex_wdata ,
-    input             mem_we   ,
-    input      [ 4:0] mem_waddr,
-    input      [31:0] mem_wdata,
+    input      [31:0] pc                 ,
+    input      [31:0] inst               ,
+    output reg        re1                ,
+    input      [31:0] reg_data1          ,
+    output reg [ 4:0] reg_addr1          ,
+    output reg        re2                ,
+    input      [31:0] reg_data2          ,
+    output reg [ 4:0] reg_addr2          ,
+    output reg [ 7:0] aluop              ,
+    output reg [ 2:0] alusel             ,
+    output reg [31:0] opv1               ,
+    output reg [31:0] opv2               ,
+    output reg        we                 ,
+    output reg [ 4:0] waddr              ,
+    input             ex_we              ,
+    input      [ 4:0] ex_waddr           ,
+    input      [31:0] ex_wdata           ,
+    input             mem_we             ,
+    input      [ 4:0] mem_waddr          ,
+    input      [31:0] mem_wdata          ,
+    output reg        br                 ,
+    output reg [31:0] br_addr            ,
+    output reg        cur_in_delay_slot_o,
+    output reg [31:0] link_addr          ,
+    output reg        next_in_delay_slot ,
+    input             cur_in_delay_slot_i,
     input             rst
 );
 
@@ -37,6 +43,10 @@ module stage_id (
     wire [ 5:0] sa       = inst[10:6] ;
     wire [15:0] inst_imm = inst[15:0] ;
     wire [31:0] sext_imm = {{16{inst[15]}}, inst[15:0]};
+    wire [31:0] pc4      = pc+4;
+    wire [31:0] pc8      = pc+8;
+    wire [31:0] pc_j     = {pc4[31:28], inst[25:0], 2'b00};
+    wire [31:0] pc_b     = pc + 4 + {{14{inst[15]}}, inst[15:0], 2'b00};
 
     `define SET_INST(i_aluop, i_alusel, i_re1, i_reg_addr1, i_re2, i_reg_addr2, i_we, i_waddr, i_imm, i_inst_valid) do begin \
         aluop      <= i_aluop     ; \
@@ -51,11 +61,22 @@ module stage_id (
         inst_valid <= i_inst_valid; \
     end while (0)
 
+    `define SET_BRANCH(i_br, i_br_addr, i_link_addr, i_next_in_delay_slot) do begin \
+        br                  <= i_br                 ; \
+        br_addr             <= i_br_addr            ; \
+        link_addr           <= i_link_addr          ; \
+        next_in_delay_slot  <= i_next_in_delay_slot ; \
+    end while (0)
+
+    assign cur_in_delay_slot_o = rst ? 0 : cur_in_delay_slot_i;
+
     always @* begin
         if (rst) begin
             `SET_INST(`EXE_NOP_OP, `EXE_RES_NOP, 0, rs, 0, rt, 0, rd, 0, 1);
+            `SET_BRANCH(0, 0, 0, 0);
         end else begin
-            `SET_INST(0, 0, 0, 0, 0, 0, 0, 0, 0, 0);    
+            `SET_INST(0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+            `SET_BRANCH(0, 0, 0, 0);
             case (op)
                 `EXE_SPECIAL_INST : case (opx)
                     `EXE_OR   : `SET_INST(`EXE_OR_OP  , `EXE_RES_LOGIC, 1, rs, 1, rt, 1, rd, 0 , 1);
@@ -83,6 +104,16 @@ module stage_id (
                     `EXE_SUBU : `SET_INST(`EXE_SUBU_OP, `EXE_RES_ARITH, 1, rs, 1, rt, 1, rd, 0, 1);
                     `EXE_MULT : `SET_INST(`EXE_MULT_OP, `EXE_RES_ARITH, 1, rs, 1, rt, 1, rd, 0, 1);
                     `EXE_MULTU:`SET_INST(`EXE_MULTU_OP, `EXE_RES_ARITH, 1, rs, 1, rt, 1, rd, 0, 1);
+                    `EXE_DIV  : `SET_INST(`EXE_DIV_OP , `EXE_RES_ARITH, 1, rs, 1, rt, 0, rd, 0, 1);
+                    `EXE_DIVU : `SET_INST(`EXE_DIVU_OP, `EXE_RES_ARITH, 1, rs, 1, rt, 0, rd, 0, 1);
+                    `EXE_JR   : begin
+                        `SET_INST(`EXE_JR_OP  , `EXE_RES_JUMP_BRANCH, 1, rs, 0, rt, 0, rd, 0, 1);
+                        `SET_BRANCH(1, opv1, 0, 1);
+                    end
+                    `EXE_JALR: begin
+                        `SET_INST(`EXE_JALR_OP, `EXE_RES_JUMP_BRANCH, 1, rs, 0, rt, 1, rd, 0, 1);
+                        `SET_BRANCH(1, opv1, pc8, 1);
+                    end
                 endcase
                 `EXE_SPECIAL2_INST: case (opx)
                     `EXE_CLZ  : `SET_INST(`EXE_CLZ_OP , `EXE_RES_ARITH, 1, rs, 0, rt, 1, rd, 0, 1);
@@ -98,6 +129,56 @@ module stage_id (
                 `EXE_SLTIU: `SET_INST(`EXE_SLTU_OP, `EXE_RES_ARITH, 1, rs, 0, 0 , 1, rt, sext_imm           , 1);
                 `EXE_ADDI : `SET_INST(`EXE_ADDI_OP, `EXE_RES_ARITH, 1, rs, 0, 0 , 1, rt, sext_imm           , 1);
                 `EXE_ADDIU: `SET_INST(`EXE_ADDIU_OP,`EXE_RES_ARITH, 1, rs, 0, 0 , 1, rt, sext_imm           , 1);
+                `EXE_J: begin
+                    `SET_INST(`EXE_J_OP   , `EXE_RES_JUMP_BRANCH, 0, rs, 0, rt, 0, rd, 0, 1);
+                    `SET_BRANCH(1, pc_j, 0, 1);
+                end
+                `EXE_JAL: begin
+                    `SET_INST(`EXE_JAL_OP , `EXE_RES_JUMP_BRANCH, 0, rs, 0, rt, 1, 31, 0, 1);
+                    `SET_BRANCH(1, pc_j, pc8, 1);
+                end
+                `EXE_BEQ: begin
+                    `SET_INST(`EXE_BEQ_OP , `EXE_RES_JUMP_BRANCH, 1, rs, 1, rt, 0, rd, 0, 1);
+                    if (opv1 == opv2) `SET_BRANCH(1, pc_b, 0, 1);
+                end
+                `EXE_BNE: begin
+                    `SET_INST(`EXE_BNE_OP , `EXE_RES_JUMP_BRANCH, 1, rs, 1, rt, 0, rd, 0, 1);
+                    if (opv1 != opv2) `SET_BRANCH(1, pc_b, 0, 1);
+                end
+                `EXE_BGTZ: begin
+                    `SET_INST(`EXE_BGTZ_OP, `EXE_RES_JUMP_BRANCH, 1, rs, 0, rt, 0, rd, 0, 1);
+                    if ($signed(opv1) > 0) `SET_BRANCH(1, pc_b, 0, 1);
+                end
+                `EXE_BLEZ: begin
+                    `SET_INST(`EXE_BLEZ_OP, `EXE_RES_JUMP_BRANCH, 1, rs, 0, rt, 0, rd, 0, 1);
+                    if ($signed(opv1) <= 0) `SET_BRANCH(1, pc_b, 0, 1);
+                end
+                `EXE_REGIMM_INST: case (rt)
+                    `EXE_BGEZ: begin
+                        `SET_INST(`EXE_BGEZ_OP  , `EXE_RES_JUMP_BRANCH, 1, rs, 0, rt, 0, rd, 0, 1);
+                        if ($signed(opv1) >= 0) `SET_BRANCH(1, pc_b, 0, 1);
+                    end
+                    `EXE_BGEZAL: begin
+                        if ($signed(opv1) >= 0) begin
+                            `SET_INST(`EXE_BGEZAL_OP, `EXE_RES_JUMP_BRANCH, 1, rs, 0, rt, 1, 31, 0, 1);
+                            `SET_BRANCH(1, pc_b, pc8, 1);
+                        end else begin
+                            `SET_INST(`EXE_BGEZAL_OP, `EXE_RES_JUMP_BRANCH, 1, rs, 0, rt, 0, 31, 0, 1);
+                        end
+                    end
+                    `EXE_BLTZ: begin
+                        `SET_INST(`EXE_BLTZ_OP  , `EXE_RES_JUMP_BRANCH, 1, rs, 0, rt, 0, rd, 0, 1);
+                        if ($signed(opv1) < 0) `SET_BRANCH(1, pc_b, 0, 1);
+                    end
+                    `EXE_BLTZAL: begin
+                        if ($signed(opv1) < 0) begin
+                            `SET_INST(`EXE_BLTZAL_OP, `EXE_RES_JUMP_BRANCH, 1, rs, 0, rt, 1, 31, 0, 1);
+                            `SET_BRANCH(1, pc_b, pc8, 1);
+                        end else begin
+                            `SET_INST(`EXE_BLTZAL_OP, `EXE_RES_JUMP_BRANCH, 1, rs, 0, rt, 0, 31, 0, 1);
+                        end
+                    end
+                endcase
             endcase
         end
     end
@@ -116,5 +197,6 @@ module stage_id (
 
     `undef SET_OPV
     `undef SET_INST
+    `undef SET_BRANCH
 
 endmodule // stage_id

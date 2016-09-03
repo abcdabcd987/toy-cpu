@@ -12,12 +12,18 @@ module openmips (
     // PC -> RAM
     assign ram_addr = pc_ifid_pc;
 
+    // ID -> PC
+    wire [31:0] id_pc_br_addr;
+    wire        id_pc_br     ;
+
     // PC
     reg_pc reg_pc (
-        .pc (pc_ifid_pc),
-        .ce (ram_ce    ),
-        .clk(clk       ),
-        .rst(rst       )
+        .pc     (pc_ifid_pc   ),
+        .ce     (ram_ce       ),
+        .br     (id_pc_br     ),
+        .br_addr(id_pc_br_addr),
+        .clk    (clk          ),
+        .rst    (rst          )
     );
 
     // IF/ID  ->  ID
@@ -41,12 +47,18 @@ module openmips (
     wire [31:0] reg_id_data1, reg_id_data2;
 
     // ID -> ID/EX
-    wire [ 7:0] id_idex_aluop ;
-    wire [ 2:0] id_idex_alusel;
-    wire [31:0] id_idex_opv1  ;
-    wire [31:0] id_idex_opv2  ;
-    wire        id_idex_we    ;
-    wire [ 4:0] id_idex_waddr ;
+    wire [ 7:0] id_idex_aluop             ;
+    wire [ 2:0] id_idex_alusel            ;
+    wire [31:0] id_idex_opv1              ;
+    wire [31:0] id_idex_opv2              ;
+    wire        id_idex_we                ;
+    wire [ 4:0] id_idex_waddr             ;
+    wire        id_idex_cur_in_delay_slot ;
+    wire [31:0] id_idex_link_addr         ;
+    wire        id_idex_next_in_delay_slot;
+
+    // ID/EX -> ID
+    wire idex_id_cur_in_delay_slot;
 
     // EX -> ID
     wire        ex_id_we   ;
@@ -60,53 +72,67 @@ module openmips (
 
     // ID
     stage_id stage_id (
-        .pc       (ifid_id_pc    ),
-        .inst     (ifid_id_inst  ),
-        .re1      (id_reg_re1    ),
-        .reg_data1(reg_id_data1  ),
-        .reg_addr1(id_reg_addr1  ),
-        .re2      (id_reg_re2    ),
-        .reg_data2(reg_id_data2  ),
-        .reg_addr2(id_reg_addr2  ),
-        .aluop    (id_idex_aluop ),
-        .alusel   (id_idex_alusel),
-        .opv1     (id_idex_opv1  ),
-        .opv2     (id_idex_opv2  ),
-        .we       (id_idex_we    ),
-        .waddr    (id_idex_waddr ),
-        .ex_we    (ex_id_we      ),
-        .ex_waddr (ex_id_waddr   ),
-        .ex_wdata (ex_id_wdata   ),
-        .mem_we   (mem_id_we     ),
-        .mem_waddr(mem_id_waddr  ),
-        .mem_wdata(mem_id_wdata  ),
-        .rst      (rst           )
+        .pc                 (ifid_id_pc                ),
+        .inst               (ifid_id_inst              ),
+        .re1                (id_reg_re1                ),
+        .reg_data1          (reg_id_data1              ),
+        .reg_addr1          (id_reg_addr1              ),
+        .re2                (id_reg_re2                ),
+        .reg_data2          (reg_id_data2              ),
+        .reg_addr2          (id_reg_addr2              ),
+        .aluop              (id_idex_aluop             ),
+        .alusel             (id_idex_alusel            ),
+        .opv1               (id_idex_opv1              ),
+        .opv2               (id_idex_opv2              ),
+        .we                 (id_idex_we                ),
+        .waddr              (id_idex_waddr             ),
+        .ex_we              (ex_id_we                  ),
+        .ex_waddr           (ex_id_waddr               ),
+        .ex_wdata           (ex_id_wdata               ),
+        .mem_we             (mem_id_we                 ),
+        .mem_waddr          (mem_id_waddr              ),
+        .mem_wdata          (mem_id_wdata              ),
+        .br                 (id_pc_br                  ),
+        .br_addr            (id_pc_br_addr             ),
+        .cur_in_delay_slot_o(id_idex_cur_in_delay_slot ),
+        .link_addr          (id_idex_link_addr         ),
+        .next_in_delay_slot (id_idex_next_in_delay_slot),
+        .cur_in_delay_slot_i(idex_id_cur_in_delay_slot ),
+        .rst                (rst                       )
     );
 
     // ID/EX -> EX
-    wire [ 7:0] idex_ex_aluop ;
-    wire [ 2:0] idex_ex_alusel;
-    wire [31:0] idex_ex_opv1  ;
-    wire [31:0] idex_ex_opv2  ;
-    wire        idex_ex_we    ;
-    wire [ 4:0] idex_ex_waddr ;
+    wire [ 7:0] idex_ex_aluop            ;
+    wire [ 2:0] idex_ex_alusel           ;
+    wire [31:0] idex_ex_opv1             ;
+    wire [31:0] idex_ex_opv2             ;
+    wire        idex_ex_we               ;
+    wire [ 4:0] idex_ex_waddr            ;
+    wire        idex_ex_cur_in_delay_slot;
+    wire [31:0] idex_ex_link_addr        ;
 
     // ID/EX
     reg_id_ex reg_id_ex (
-        .id_aluop (id_idex_aluop ),
-        .id_alusel(id_idex_alusel),
-        .id_opv1  (id_idex_opv1  ),
-        .id_opv2  (id_idex_opv2  ),
-        .id_we    (id_idex_we    ),
-        .id_waddr (id_idex_waddr ),
-        .ex_aluop (idex_ex_aluop ),
-        .ex_alusel(idex_ex_alusel),
-        .ex_opv1  (idex_ex_opv1  ),
-        .ex_opv2  (idex_ex_opv2  ),
-        .ex_we    (idex_ex_we    ),
-        .ex_waddr (idex_ex_waddr ),
-        .clk      (clk           ),
-        .rst      (rst           )
+        .id_aluop             (id_idex_aluop             ),
+        .id_alusel            (id_idex_alusel            ),
+        .id_opv1              (id_idex_opv1              ),
+        .id_opv2              (id_idex_opv2              ),
+        .id_we                (id_idex_we                ),
+        .id_waddr             (id_idex_waddr             ),
+        .ex_aluop             (idex_ex_aluop             ),
+        .ex_alusel            (idex_ex_alusel            ),
+        .ex_opv1              (idex_ex_opv1              ),
+        .ex_opv2              (idex_ex_opv2              ),
+        .ex_we                (idex_ex_we                ),
+        .ex_waddr             (idex_ex_waddr             ),
+        .id_cur_in_delay_slot (id_idex_cur_in_delay_slot ),
+        .id_link_addr         (id_idex_link_addr         ),
+        .id_next_in_delay_slot(id_idex_next_in_delay_slot),
+        .ex_cur_in_delay_slot (idex_ex_cur_in_delay_slot ),
+        .ex_link_addr         (idex_ex_link_addr         ),
+        .ex_next_in_delay_slot(idex_id_cur_in_delay_slot ),
+        .clk                  (clk                       ),
+        .rst                  (rst                       )
     );
 
     // EX -> EX/MEM
@@ -136,27 +162,29 @@ module openmips (
 
     // EX
     stage_ex stage_ex (
-        .aluop      (idex_ex_aluop   ),
-        .alusel     (idex_ex_alusel  ),
-        .opv1       (idex_ex_opv1    ),
-        .opv2       (idex_ex_opv2    ),
-        .we         (idex_ex_we      ),
-        .waddr      (idex_ex_waddr   ),
-        .we_o       (ex_exmem_we     ),
-        .waddr_o    (ex_exmem_waddr  ),
-        .wdata      (ex_exmem_wdata  ),
-        .hilo_hi    (hilo_ex_hi      ),
-        .hilo_lo    (hilo_ex_lo      ),
-        .mem_we_hilo(mem_ex_we_hilo  ),
-        .mem_hi     (mem_ex_hi       ),
-        .mem_lo     (mem_ex_lo       ),
-        .wb_we_hilo (wb_ex_we_hilo   ),
-        .wb_hi      (wb_ex_hi        ),
-        .wb_lo      (wb_ex_lo        ),
-        .we_hilo    (ex_exmem_we_hilo),
-        .hi_o       (ex_exmem_hi     ),
-        .lo_o       (ex_exmem_lo     ),
-        .rst        (rst             )
+        .aluop            (idex_ex_aluop            ),
+        .alusel           (idex_ex_alusel           ),
+        .opv1             (idex_ex_opv1             ),
+        .opv2             (idex_ex_opv2             ),
+        .we               (idex_ex_we               ),
+        .waddr            (idex_ex_waddr            ),
+        .we_o             (ex_exmem_we              ),
+        .waddr_o          (ex_exmem_waddr           ),
+        .wdata            (ex_exmem_wdata           ),
+        .hilo_hi          (hilo_ex_hi               ),
+        .hilo_lo          (hilo_ex_lo               ),
+        .mem_we_hilo      (mem_ex_we_hilo           ),
+        .mem_hi           (mem_ex_hi                ),
+        .mem_lo           (mem_ex_lo                ),
+        .wb_we_hilo       (wb_ex_we_hilo            ),
+        .wb_hi            (wb_ex_hi                 ),
+        .wb_lo            (wb_ex_lo                 ),
+        .we_hilo          (ex_exmem_we_hilo         ),
+        .hi_o             (ex_exmem_hi              ),
+        .lo_o             (ex_exmem_lo              ),
+        .cur_in_delay_slot(idex_ex_cur_in_delay_slot),
+        .link_addr        (idex_ex_link_addr        ),
+        .rst              (rst                      )
     );
 
     // EX/MEM -> MEM

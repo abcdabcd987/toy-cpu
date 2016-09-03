@@ -40,20 +40,37 @@
 `define EXE_MULT  6'b011000
 `define EXE_MULTU 6'b011001
 `define EXE_MUL   6'b000010
+`define EXE_DIV   6'b011010
+`define EXE_DIVU  6'b011011
+
+`define EXE_J      6'b000010
+`define EXE_JAL    6'b000011
+`define EXE_JALR   6'b001001
+`define EXE_JR     6'b001000
+`define EXE_BEQ    6'b000100
+`define EXE_BGEZ   5'b00001
+`define EXE_BGEZAL 5'b10001
+`define EXE_BGTZ   6'b000111
+`define EXE_BLEZ   6'b000110
+`define EXE_BLTZ   5'b00000
+`define EXE_BLTZAL 5'b10000
+`define EXE_BNE    6'b000101
 
 `define EXE_SYNC          6'b001111
 `define EXE_PREF          6'b110011
+`define EXE_REGIMM_INST   6'b000001
 `define EXE_SPECIAL_INST  6'b000000
 `define EXE_SPECIAL2_INST 6'b011100
 
 
 //====== ALUSEL
-`define EXE_RES_LOGIC 3'b001
-`define EXE_RES_SHIFT 3'b010
-`define EXE_RES_MOVE  3'b011
-`define EXE_RES_NOP   3'b000
-`define EXE_RES_ARITH 3'b100
-`define EXE_RES_MUL   3'b101
+`define EXE_RES_LOGIC       3'b001
+`define EXE_RES_SHIFT       3'b010
+`define EXE_RES_MOVE        3'b011
+`define EXE_RES_NOP         3'b000
+`define EXE_RES_ARITH       3'b100
+`define EXE_RES_MUL         3'b101
+`define EXE_RES_JUMP_BRANCH 3'b110
 
 
 //====== ALUOP
@@ -92,6 +109,21 @@
 
 `define EXE_MULT_OP  8'b00011000
 `define EXE_MULTU_OP 8'b00011001
-`define EXE_MUL_OP  8'b10101001
+`define EXE_MUL_OP   8'b10101001
+`define EXE_DIV_OP   8'b00011010
+`define EXE_DIVU_OP  8'b00011011
+
+`define EXE_J_OP      8'b01001111
+`define EXE_JAL_OP    8'b01010000
+`define EXE_JALR_OP   8'b00001001
+`define EXE_JR_OP     8'b00001000
+`define EXE_BEQ_OP    8'b01010001
+`define EXE_BGEZ_OP   8'b01000001
+`define EXE_BGEZAL_OP 8'b01001011
+`define EXE_BGTZ_OP   8'b01010100
+`define EXE_BLEZ_OP   8'b01010011
+`define EXE_BLTZ_OP   8'b01000000
+`define EXE_BLTZAL_OP 8'b01001010
+`define EXE_BNE_OP    8'b01010010
 
 `endif

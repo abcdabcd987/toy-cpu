@@ -6,7 +6,9 @@ all: prepare \
 	inst_shift_test \
 	inst_logic_test \
 	inst_move_test \
-	inst_simple_arith_test
+	inst_simple_arith_test \
+	inst_jump_test \
+	inst_br_test
 
 prepare:
 	mkdir -p out
@@ -15,6 +17,8 @@ prepare:
 	(cd ../data && ./compile.py inst_shift.s inst_shift.txt)
 	(cd ../data && ./compile.py inst_move.s inst_move.txt)
 	(cd ../data && ./compile.py inst_simple_arith.s inst_simple_arith.txt)
+	(cd ../data && ./compile.py inst_jump.s inst_jump.txt)
+	(cd ../data && ./compile.py inst_br.s inst_br.txt)
 
 clean:
 	rm -rf out/ *.vcd
@@ -29,3 +33,5 @@ inst_shift_test: inst_shift_test.v ../*.v
 inst_logic_test: inst_logic_test.v ../*.v
 inst_move_test: inst_move_test.v ../*.v
 inst_simple_arith_test: inst_simple_arith_test.v ../*.v
+inst_jump_test: inst_jump_test.v ../*.v
+inst_br_test: inst_br_test.v ../*.v

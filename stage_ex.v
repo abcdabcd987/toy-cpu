@@ -1,26 +1,28 @@
 `include "consts.v"
 
 module stage_ex (
-    input      [ 7:0] aluop      ,
-    input      [ 2:0] alusel     ,
-    input      [31:0] opv1       ,
-    input      [31:0] opv2       ,
-    input             we         ,
-    input      [ 4:0] waddr      ,
-    output reg        we_o       ,
-    output     [ 4:0] waddr_o    ,
-    output reg [31:0] wdata      ,
-    input      [31:0] hilo_hi    ,
-    input      [31:0] hilo_lo    ,
-    input             mem_we_hilo,
-    input      [31:0] mem_hi     ,
-    input      [31:0] mem_lo     ,
-    input             wb_we_hilo ,
-    input      [31:0] wb_hi      ,
-    input      [31:0] wb_lo      ,
-    output reg        we_hilo    ,
-    output reg [31:0] hi_o       ,
-    output reg [31:0] lo_o       ,
+    input      [ 7:0] aluop            ,
+    input      [ 2:0] alusel           ,
+    input      [31:0] opv1             ,
+    input      [31:0] opv2             ,
+    input             we               ,
+    input      [ 4:0] waddr            ,
+    output reg        we_o             ,
+    output     [ 4:0] waddr_o          ,
+    output reg [31:0] wdata            ,
+    input      [31:0] hilo_hi          ,
+    input      [31:0] hilo_lo          ,
+    input             mem_we_hilo      ,
+    input      [31:0] mem_hi           ,
+    input      [31:0] mem_lo           ,
+    input             wb_we_hilo       ,
+    input      [31:0] wb_hi            ,
+    input      [31:0] wb_lo            ,
+    output reg        we_hilo          ,
+    output reg [31:0] hi_o             ,
+    output reg [31:0] lo_o             ,
+    input             cur_in_delay_slot,
+    input      [31:0] link_addr        ,
     input             rst
 );
 
@@ -120,23 +122,29 @@ module stage_ex (
         lo_o    <= i_lo_o     ; \
     end while (0)
     always @* begin
-        if (aluop == `EXE_MULT_OP || aluop == `EXE_MULTU_OP) `SET_HILO_OUT(1, mul_out[63:32], mul_out[31:0]);
-        else if (aluop == `EXE_MTHI_OP) `SET_HILO_OUT(1, opv1, lo);
-        else if (aluop == `EXE_MTLO_OP) `SET_HILO_OUT(1, hi, opv1);
-        else `SET_HILO_OUT(0, 0, 0);
+        case (aluop)
+            `EXE_MULT_OP  : `SET_HILO_OUT(1, mul_out[63:32], mul_out[31:0]);
+            `EXE_MULTU_OP : `SET_HILO_OUT(1, mul_out[63:32], mul_out[31:0]);
+            `EXE_MTHI_OP  : `SET_HILO_OUT(1, opv1, lo);
+            `EXE_MTLO_OP  : `SET_HILO_OUT(1, hi, opv1);
+            `EXE_DIV_OP   : `SET_HILO_OUT(1, $signed(opv1) % $signed(opv2), $signed(opv1) / $signed(opv2));
+            `EXE_DIVU_OP  : `SET_HILO_OUT(1, opv1 % opv2, opv1 / opv2);
+            default       : `SET_HILO_OUT(0, 0, 0);
+        endcase
     end
     `undef SET_HILO_OUT
 
     always @* begin
-        we_o <= (aluop == `EXE_ADD_OP || aluop == `EXE_ADDI_OP || aluop == `EXE_SUB_OP) 
-                  && sum_overflow == 1 ? 0 : we;
+        we_o <= (aluop == `EXE_ADD_OP || aluop == `EXE_ADDI_OP || aluop == `EXE_SUB_OP)
+            && sum_overflow == 1 ? 0 : we;
         case (alusel)
-            `EXE_RES_LOGIC : wdata <= logic_out;
-            `EXE_RES_SHIFT : wdata <= shift_out;
-            `EXE_RES_MOVE  : wdata <= moves_out;
-            `EXE_RES_ARITH : wdata <= arith_out;
-            `EXE_RES_MUL   : wdata <= mul_out[31:0];
-            default        : wdata <= 0;
+            `EXE_RES_LOGIC       : wdata <= logic_out;
+            `EXE_RES_SHIFT       : wdata <= shift_out;
+            `EXE_RES_MOVE        : wdata <= moves_out;
+            `EXE_RES_ARITH       : wdata <= arith_out;
+            `EXE_RES_MUL         : wdata <= mul_out[31:0];
+            `EXE_RES_JUMP_BRANCH : wdata <= link_addr;
+            default              : wdata <= 0;
         endcase
     end
 
