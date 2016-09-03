@@ -34,31 +34,19 @@ module stage_ex (
 
     assign waddr_o = waddr;
 
-    wire [31:0] opv2_compl = (aluop == `EXE_SUB_OP || aluop == `EXE_SUBU_OP || aluop == `EXE_SLT_OP) ? (~opv2)+1 : opv2;
-    wire [31:0] sum = opv1 + opv2_compl;
-    wire sum_overflow = (!opv1[31] && !opv2_compl[31] && sum[31]) || (opv1[31] && opv2_compl[31] && !sum[31]);
-    wire opv1_lt_opv2 = aluop == `EXE_SLT_OP
-                          ? ((opv1[31] && !opv2[31]) ||
-                            (!opv1[31] && !opv2[31] && sum[31]) ||
-                            (opv1[31] && opv2[31] && sum[31]))
-                          : (opv1 < opv2);
-
     reg [31:0] clz_res;
     reg [31:0] clo_res;
     clz32 clz32(clz_res, opv1);
     clz32 clo32(clo_res, ~opv1);
 
-    wire [31:0] mul_opv1 = (aluop == `EXE_MUL_OP || aluop == `EXE_MULT_OP) && (opv1[31] == 1) ? (~opv1)+1 : opv1;
-    wire [31:0] mul_opv2 = (aluop == `EXE_MUL_OP || aluop == `EXE_MULT_OP) && (opv2[31] == 1) ? (~opv2)+1 : opv2;
-    wire [63:0] mul_res = mul_opv1 * mul_opv2;
-
     always @* begin
-        if (rst) begin
-            mul_out <= 0;
-        end else if ((aluop == `EXE_MULT_OP || aluop == `EXE_MUL_OP) && opv1[31] ^ opv2[31] == 1) begin
-            mul_out <= (~mul_res) + 1;
-        end else begin
-            mul_out <= mul_res;
+        mul_out <= 0;
+        if (!rst) begin
+            case (aluop)
+                `EXE_MUL_OP   : mul_out <= $signed(opv1) * $signed(opv2);
+                `EXE_MULT_OP  : mul_out <= $signed(opv1) * $signed(opv2);
+                `EXE_MULTU_OP : mul_out <= opv1 * opv2;
+            endcase
         end
     end
 
@@ -66,19 +54,21 @@ module stage_ex (
         arith_out <= 0;
         if (!rst) begin
             case (aluop)
-                `EXE_SLT_OP,
-                `EXE_SLTU_OP: arith_out <= opv1_lt_opv2;
-                `EXE_ADD_OP,
-                `EXE_ADDU_OP,
-                `EXE_ADDI_OP,
-                `EXE_ADDIU_OP,
-                `EXE_SUB_OP,
-                `EXE_SUBU_OP: arith_out <= sum;
-                `EXE_CLZ_OP: arith_out <= clz_res;
-                `EXE_CLO_OP: arith_out <= clo_res;
+                `EXE_SLT_OP   : arith_out <= $signed(opv1) < $signed(opv2);
+                `EXE_SLTU_OP  : arith_out <= opv1 < opv2;
+                `EXE_ADD_OP   : arith_out <= $signed(opv1) + $signed(opv2);
+                `EXE_ADDU_OP  : arith_out <= opv1 + opv2;
+                `EXE_ADDI_OP  : arith_out <= $signed(opv1) + $signed(opv2);
+                `EXE_ADDIU_OP : arith_out <= opv1 + opv2;
+                `EXE_SUB_OP   : arith_out <= $signed(opv1) - $signed(opv2);
+                `EXE_SUBU_OP  : arith_out <= opv1 - opv2;
+                `EXE_CLZ_OP   : arith_out <= clz_res;
+                `EXE_CLO_OP   : arith_out <= clo_res;
             endcase
         end
     end
+    wire sum_overflow = ($signed(opv1) > 0 && $signed(opv2) > 0 && $signed(arith_out) < 0) 
+                     || ($signed(opv1) < 0 && $signed(opv2) < 0 && $signed(arith_out) > 0);
 
     always @* begin
         if (rst) begin
