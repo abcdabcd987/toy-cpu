@@ -1,6 +1,5 @@
 .PHONY: all
 all: prepare \
-	memory_test \
 	regfile_test \
 	ori_forwarding_test \
 	inst_shift_test \
@@ -8,7 +7,9 @@ all: prepare \
 	inst_move_test \
 	inst_simple_arith_test \
 	inst_jump_test \
-	inst_br_test
+	inst_br_test \
+	inst_load_store_test \
+	inst_load_stall_test \
 
 prepare:
 	mkdir -p out
@@ -19,6 +20,8 @@ prepare:
 	(cd ../data && ./compile.py inst_simple_arith.s inst_simple_arith.txt)
 	(cd ../data && ./compile.py inst_jump.s inst_jump.txt)
 	(cd ../data && ./compile.py inst_br.s inst_br.txt)
+	(cd ../data && ./compile.py inst_load_store.s inst_load_store.txt)
+	(cd ../data && ./compile.py inst_load_stall.s inst_load_stall.txt)
 
 clean:
 	rm -rf out/ *.vcd
@@ -26,7 +29,6 @@ clean:
 %_test:
 	iverilog -o out/$@ -g2009 -I.. $^
 
-memory_test: memory_test.v ../memory.v
 regfile_test: regfile_test.v ../regfile.v
 ori_forwarding_test: ori_forwarding_test.v ../*.v
 inst_shift_test: inst_shift_test.v ../*.v
@@ -35,3 +37,5 @@ inst_move_test: inst_move_test.v ../*.v
 inst_simple_arith_test: inst_simple_arith_test.v ../*.v
 inst_jump_test: inst_jump_test.v ../*.v
 inst_br_test: inst_br_test.v ../*.v
+inst_load_store_test: inst_load_store_test.v ../*.v
+inst_load_stall_test: inst_load_stall_test.v ../*.v

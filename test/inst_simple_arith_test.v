@@ -13,7 +13,7 @@ module inst_simple_arith_test();
         for (i = 1; i <= 4; i = i+1)
             $dumpvars(0, top.openmips.regfile.regs[i]);
 
-        $readmemh("../data/inst_simple_arith.txt", top.ram.memory, 0, 42);
+        $readmemh("../data/inst_simple_arith.txt", top.rom.memory, 0, 42);
 
         clk = 0;
         rst = 1;

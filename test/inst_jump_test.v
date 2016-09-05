@@ -14,7 +14,7 @@ module inst_jump_test();
         $dumpvars(0, top.openmips.regfile.regs[2]);
         $dumpvars(0, top.openmips.regfile.regs[31]);
 
-        $readmemh("../data/inst_jump.txt", top.ram.memory, 0, 34);
+        $readmemh("../data/inst_jump.txt", top.rom.memory, 0, 34);
 
         clk = 0;
         rst = 1;

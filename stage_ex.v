@@ -21,8 +21,13 @@ module stage_ex (
     output reg        we_hilo          ,
     output reg [31:0] hi_o             ,
     output reg [31:0] lo_o             ,
+    output reg        stallreq         ,
     input             cur_in_delay_slot,
     input      [31:0] link_addr        ,
+    input      [31:0] inst             ,
+    output     [ 7:0] aluop_o          ,
+    output     [31:0] mem_addr         ,
+    output     [31:0] opv2_o           ,
     input             rst
 );
 
@@ -34,7 +39,12 @@ module stage_ex (
     reg [31:0] hi       ;
     reg [31:0] lo       ;
 
-    assign waddr_o = waddr;
+    assign waddr_o  = waddr;
+    assign aluop_o  = aluop;
+    assign opv2_o   = opv2;
+    assign mem_addr = opv1 + {{16{inst[15]}}, inst[15:0]};
+
+    assign stallreq = 0;
 
     reg [31:0] clz_res;
     reg [31:0] clo_res;

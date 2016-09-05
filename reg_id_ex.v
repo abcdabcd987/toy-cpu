@@ -11,25 +11,29 @@ module reg_id_ex (
     output reg [31:0] ex_opv2              ,
     output reg        ex_we                ,
     output reg [ 4:0] ex_waddr             ,
+    input      [ 5:0] stall                ,
     input             id_cur_in_delay_slot ,
     input      [31:0] id_link_addr         ,
     input             id_next_in_delay_slot,
     output reg        ex_cur_in_delay_slot ,
     output reg [31:0] ex_link_addr         ,
     output reg        ex_next_in_delay_slot,
+    input      [31:0] id_inst              ,
+    output reg [31:0] ex_inst              ,
     input             clk                  ,
     input             rst
 );
 
     always @(posedge clk) begin
-        if (rst) begin
+        if (rst || (stall[2] && !stall[3])) begin
             ex_aluop <= 0; ex_alusel <= 0; // nop
             ex_opv1  <= 0; ex_opv2   <= 0;
             ex_we    <= 0; ex_waddr  <= 0;
             ex_cur_in_delay_slot  <= 0;
             ex_link_addr          <= 0;
             ex_next_in_delay_slot <= 0;
-        end else begin
+            ex_inst  <= 0;
+        end else if (!stall[2]) begin
             ex_aluop  <= id_aluop ;
             ex_alusel <= id_alusel;
             ex_opv1   <= id_opv1  ;
@@ -39,6 +43,7 @@ module reg_id_ex (
             ex_cur_in_delay_slot  <= id_cur_in_delay_slot ;
             ex_link_addr          <= id_link_addr         ;
             ex_next_in_delay_slot <= id_next_in_delay_slot;
+            ex_inst   <= id_inst;
         end
     end
 

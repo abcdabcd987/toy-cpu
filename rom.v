@@ -1,4 +1,4 @@
-module memory (
+module rom (
     output [31:0] data_out,
     input  [31:0] addr    ,
     input  [31:0] data_in ,
@@ -17,4 +17,4 @@ module memory (
         end
     end
 
-endmodule // Memory
+endmodule // rom

@@ -15,7 +15,7 @@ module inst_shift_test();
         $dumpvars(0, top.openmips.regfile.regs[7]);
         $dumpvars(0, top.openmips.regfile.regs[8]);
 
-        $readmemh("../data/inst_shift.txt", top.ram.memory, 0, 15);
+        $readmemh("../data/inst_shift.txt", top.rom.memory, 0, 15);
 
         clk = 0;
         rst = 1;

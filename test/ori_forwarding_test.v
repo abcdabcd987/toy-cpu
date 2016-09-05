@@ -13,7 +13,7 @@ module ori_forwarding_test();
         for (i = 2; i <= 5; i = i+1)
             $dumpvars(0, top.openmips.regfile.regs[i]);
 
-        $readmemh("../data/ori_forwarding.txt", top.ram.memory, 0, 6);
+        $readmemh("../data/ori_forwarding.txt", top.rom.memory, 0, 6);
 
         clk = 0;
         rst = 1;

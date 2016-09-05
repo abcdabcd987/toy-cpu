@@ -13,7 +13,7 @@ module inst_move_test();
         for (i = 1; i <= 4; i = i+1)
             $dumpvars(0, top.openmips.regfile.regs[i]);
 
-        $readmemh("../data/inst_move.txt", top.ram.memory, 0, 15);
+        $readmemh("../data/inst_move.txt", top.rom.memory, 0, 15);
 
         clk = 0;
         rst = 1;

@@ -14,7 +14,7 @@ module inst_br_test();
         $dumpvars(0, top.openmips.regfile.regs[3]);
         $dumpvars(0, top.openmips.regfile.regs[31]);
 
-        $readmemh("../data/inst_br.txt", top.ram.memory, 0, 91);
+        $readmemh("../data/inst_br.txt", top.rom.memory, 0, 91);
 
         clk = 0;
         rst = 1;

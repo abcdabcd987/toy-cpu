@@ -11,19 +11,20 @@ module reg_mem_wb (
     output reg        wb_we_hilo ,
     output reg [31:0] wb_hi      ,
     output reg [31:0] wb_lo      ,
+    input      [ 5:0] stall      ,
     input             clk        ,
     input             rst
 );
 
     always @(posedge clk) begin
-        if (rst) begin
+        if (rst || (stall[4] && !stall[5])) begin
             wb_we      <= 0;
             wb_waddr   <= 0;
             wb_wdata   <= 0;
             wb_we_hilo <= 0;
             wb_hi      <= 0;
             wb_lo      <= 0;
-        end else begin
+        end else if (!stall[4]) begin
             wb_we      <= mem_we;
             wb_waddr   <= mem_waddr;
             wb_wdata   <= mem_wdata;

@@ -21,14 +21,19 @@ module stage_id (
     input             mem_we             ,
     input      [ 4:0] mem_waddr          ,
     input      [31:0] mem_wdata          ,
+    output reg        stallreq           ,
+    input      [ 7:0] ex_aluop           ,
     output reg        br                 ,
     output reg [31:0] br_addr            ,
     output reg        cur_in_delay_slot_o,
     output reg [31:0] link_addr          ,
     output reg        next_in_delay_slot ,
     input             cur_in_delay_slot_i,
+    output reg [31:0] inst_o             ,
     input             rst
 );
+
+    assign inst_o = inst;
 
     reg [31:0] imm       ;
     reg        inst_valid;
@@ -47,6 +52,19 @@ module stage_id (
     wire [31:0] pc8      = pc+8;
     wire [31:0] pc_j     = {pc4[31:28], inst[25:0], 2'b00};
     wire [31:0] pc_b     = pc + 4 + {{14{inst[15]}}, inst[15:0], 2'b00};
+
+    reg stallreq_for_reg1_loadrelate;
+    reg stallreq_for_reg2_loadrelate;
+    assign stallreq = stallreq_for_reg1_loadrelate || stallreq_for_reg2_loadrelate;
+    assign prev_is_load = ex_aluop == `EXE_LB_OP  || 
+                          ex_aluop == `EXE_LBU_OP ||
+                          ex_aluop == `EXE_LH_OP  ||
+                          ex_aluop == `EXE_LHU_OP ||
+                          ex_aluop == `EXE_LW_OP  ||
+                          ex_aluop == `EXE_LWR_OP ||
+                          ex_aluop == `EXE_LWL_OP ||
+                          ex_aluop == `EXE_LL_OP  ||
+                          ex_aluop == `EXE_SC_OP;
 
     `define SET_INST(i_aluop, i_alusel, i_re1, i_reg_addr1, i_re2, i_reg_addr2, i_we, i_waddr, i_imm, i_inst_valid) do begin \
         aluop      <= i_aluop     ; \
@@ -129,6 +147,18 @@ module stage_id (
                 `EXE_SLTIU: `SET_INST(`EXE_SLTU_OP, `EXE_RES_ARITH, 1, rs, 0, 0 , 1, rt, sext_imm           , 1);
                 `EXE_ADDI : `SET_INST(`EXE_ADDI_OP, `EXE_RES_ARITH, 1, rs, 0, 0 , 1, rt, sext_imm           , 1);
                 `EXE_ADDIU: `SET_INST(`EXE_ADDIU_OP,`EXE_RES_ARITH, 1, rs, 0, 0 , 1, rt, sext_imm           , 1);
+                `EXE_LB   : `SET_INST(`EXE_LB_OP , `EXE_RES_LOAD_STORE, 1, rs, 0, 0 , 1, rt, 0, 1);
+                `EXE_LBU  : `SET_INST(`EXE_LBU_OP, `EXE_RES_LOAD_STORE, 1, rs, 0, 0 , 1, rt, 0, 1);
+                `EXE_LH   : `SET_INST(`EXE_LH_OP , `EXE_RES_LOAD_STORE, 1, rs, 0, 0 , 1, rt, 0, 1);
+                `EXE_LHU  : `SET_INST(`EXE_LHU_OP, `EXE_RES_LOAD_STORE, 1, rs, 0, 0 , 1, rt, 0, 1);
+                `EXE_LW   : `SET_INST(`EXE_LW_OP , `EXE_RES_LOAD_STORE, 1, rs, 0, 0 , 1, rt, 0, 1);
+                `EXE_LWL  : `SET_INST(`EXE_LWL_OP, `EXE_RES_LOAD_STORE, 1, rs, 1, rt, 1, rt, 0, 1);
+                `EXE_LWR  : `SET_INST(`EXE_LWR_OP, `EXE_RES_LOAD_STORE, 1, rs, 1, rt, 1, rt, 0, 1);
+                `EXE_SB   : `SET_INST(`EXE_SB_OP , `EXE_RES_LOAD_STORE, 1, rs, 1, rt, 0,  0, 0, 1);
+                `EXE_SH   : `SET_INST(`EXE_SH_OP , `EXE_RES_LOAD_STORE, 1, rs, 1, rt, 0,  0, 0, 1);
+                `EXE_SW   : `SET_INST(`EXE_SW_OP , `EXE_RES_LOAD_STORE, 1, rs, 1, rt, 0,  0, 0, 1);
+                `EXE_SWL  : `SET_INST(`EXE_SWL_OP, `EXE_RES_LOAD_STORE, 1, rs, 1, rt, 0,  0, 0, 1);
+                `EXE_SWR  : `SET_INST(`EXE_SWR_OP, `EXE_RES_LOAD_STORE, 1, rs, 1, rt, 0,  0, 0, 1);
                 `EXE_J: begin
                     `SET_INST(`EXE_J_OP   , `EXE_RES_JUMP_BRANCH, 0, rs, 0, rt, 0, rd, 0, 1);
                     `SET_BRANCH(1, pc_j, 0, 1);
@@ -184,16 +214,18 @@ module stage_id (
     end
 
 
-    `define SET_OPV(opv, re, reg_addr, reg_data) do begin \
+    `define SET_OPV(opv, re, reg_addr, reg_data, stallreq) do begin \
+        stallreq <= 0; \
         if (rst) opv <= 0; \
+        else if (prev_is_load && ex_waddr == reg_addr && re) stallreq <= 1; \
         else if (!re) opv <= imm; \
         else if (ex_we && ex_waddr == reg_addr) opv <= ex_wdata; \
         else if (mem_we && mem_waddr == reg_addr) opv <= mem_wdata; \
         else opv <= reg_data; \
     end while (0)
 
-    always @* `SET_OPV(opv1, re1, reg_addr1, reg_data1);
-    always @* `SET_OPV(opv2, re2, reg_addr2, reg_data2);
+    always @* `SET_OPV(opv1, re1, reg_addr1, reg_data1, stallreq_for_reg1_loadrelate);
+    always @* `SET_OPV(opv2, re2, reg_addr2, reg_data2, stallreq_for_reg2_loadrelate);
 
     `undef SET_OPV
     `undef SET_INST
