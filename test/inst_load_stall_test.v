@@ -1,4 +1,5 @@
 `timescale 1ns/1ps
+`include "assert.v"
 
 module inst_load_stall_test();
     reg     clk, rst;
@@ -16,12 +17,21 @@ module inst_load_stall_test();
         $dumpvars(0, top.openmips.regfile.regs[1]);
         $dumpvars(0, top.openmips.regfile.regs[3]);
 
-        $readmemh("../data/inst_load_stall.txt", top.rom.memory, 0, 12);
+        $readmemh("../data/inst_load_stall_test.txt", top.rom.memory, 0, 12);
 
         clk = 0;
         rst = 1;
         #20 rst = 0;
-        #200 $finish;
+        #10 `AR(1,32'h00001234);
+        #2  `AR(1,32'h00001234);
+        #2  `AR(1,32'h00001234);
+        #2  `AR(1,32'h00000000);
+        #2  `AR(1,32'h00001234);
+        #2  `AR(1,32'h00001234);
+        #2  `AR(1,32'h00001234);
+        #2  `AR(1,32'h00001234);
+        #2  `AR(1,32'h000089AB);
+        `PASS;
     end
 
 endmodule

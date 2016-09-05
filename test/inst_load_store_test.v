@@ -1,4 +1,5 @@
 `timescale 1ns/1ps
+`include "assert.v"
 
 module inst_load_store_test();
     reg     clk, rst;
@@ -16,12 +17,44 @@ module inst_load_store_test();
         $dumpvars(0, top.openmips.regfile.regs[1]);
         $dumpvars(0, top.openmips.regfile.regs[3]);
 
-        $readmemh("../data/inst_load_store.txt", top.rom.memory, 0, 31);
+        $readmemh("../data/inst_load_store_test.txt", top.rom.memory, 0, 31);
 
         clk = 0;
         rst = 1;
         #20 rst = 0;
-        #200 $finish;
+        #10 `AR(1,32'hxxxxxxxx);`AR(3,32'h0000EEFF);
+        #2  `AR(1,32'hxxxxxxxx);`AR(3,32'h0000EEFF);
+        #2  `AR(1,32'hxxxxxxxx);`AR(3,32'h000000EE);
+        #2  `AR(1,32'hxxxxxxxx);`AR(3,32'h000000EE);
+        #2  `AR(1,32'hxxxxxxxx);`AR(3,32'h0000CCDD);
+        #2  `AR(1,32'hxxxxxxxx);`AR(3,32'h0000CCDD);
+        #2  `AR(1,32'hxxxxxxxx);`AR(3,32'h000000CC);
+        #2  `AR(1,32'hxxxxxxxx);`AR(3,32'h000000CC);
+        #2  `AR(1,32'hFFFFFFFF);`AR(3,32'h000000CC);
+        #2  `AR(1,32'h000000EE);`AR(3,32'h000000CC);
+        #2  `AR(1,32'h000000EE);`AR(3,32'h0000AABB);
+        #2  `AR(1,32'h000000EE);`AR(3,32'h0000AABB);
+        #2  `AR(1,32'h0000AABB);`AR(3,32'h0000AABB);
+        #2  `AR(1,32'hFFFFAABB);`AR(3,32'h0000AABB);
+        #2  `AR(1,32'hFFFFAABB);`AR(3,32'h00008899);
+        #2  `AR(1,32'hFFFFAABB);`AR(3,32'h00008899);
+        #2  `AR(1,32'hFFFF8899);`AR(3,32'h00008899);
+        #2  `AR(1,32'h00008899);`AR(3,32'h00008899);
+        #2  `AR(1,32'h00008899);`AR(3,32'h00004455);
+        #2  `AR(1,32'h00008899);`AR(3,32'h44550000);
+        #2  `AR(1,32'h00008899);`AR(3,32'h44556677);
+        #2  `AR(1,32'h00008899);`AR(3,32'h44556677);
+        #2  `AR(1,32'h44556677);`AR(3,32'h44556677);
+        #2  `AR(1,32'h44556677);`AR(3,32'h44556677);
+        #2  `AR(1,32'hBB889977);`AR(3,32'h44556677);
+        #2  `AR(1,32'hBB889977);`AR(3,32'h44556677);
+        #2  `AR(1,32'hBB889944);`AR(3,32'h44556677);
+        #2  `AR(1,32'hBB889944);`AR(3,32'h44556677);
+        #2  `AR(1,32'hBB889944);`AR(3,32'h44556677);
+        #2  `AR(1,32'hBB889944);`AR(3,32'h44556677);
+        #2  `AR(1,32'h889944FF);`AR(3,32'h44556677);
+        #2  `AR(1,32'hAABB88BB);`AR(3,32'h44556677);
+        `PASS;
     end
 
 endmodule
