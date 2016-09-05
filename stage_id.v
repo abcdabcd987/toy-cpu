@@ -159,6 +159,8 @@ module stage_id (
                 `EXE_SW   : `SET_INST(`EXE_SW_OP , `EXE_RES_LOAD_STORE, 1, rs, 1, rt, 0,  0, 0, 1);
                 `EXE_SWL  : `SET_INST(`EXE_SWL_OP, `EXE_RES_LOAD_STORE, 1, rs, 1, rt, 0,  0, 0, 1);
                 `EXE_SWR  : `SET_INST(`EXE_SWR_OP, `EXE_RES_LOAD_STORE, 1, rs, 1, rt, 0,  0, 0, 1);
+                `EXE_LL   : `SET_INST(`EXE_LL_OP , `EXE_RES_LOAD_STORE, 1, rs, 0,  0, 1, rt, 0, 1);
+                `EXE_SC   : `SET_INST(`EXE_SC_OP , `EXE_RES_LOAD_STORE, 1, rs, 1, rt, 1, rt, 0, 1);
                 `EXE_J: begin
                     `SET_INST(`EXE_J_OP   , `EXE_RES_JUMP_BRANCH, 0, rs, 0, rt, 0, rd, 0, 1);
                     `SET_BRANCH(1, pc_j, 0, 1);

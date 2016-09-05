@@ -255,12 +255,14 @@ module openmips (
     );
 
     // MEM -> MEM/WB
-    wire        mem_memwb_we     ;
-    wire [ 4:0] mem_memwb_waddr  ;
-    wire [31:0] mem_memwb_wdata  ;
-    wire        mem_memwb_we_hilo;
-    wire [31:0] mem_memwb_hi     ;
-    wire [31:0] mem_memwb_lo     ;
+    wire        mem_memwb_we         ;
+    wire [ 4:0] mem_memwb_waddr      ;
+    wire [31:0] mem_memwb_wdata      ;
+    wire        mem_memwb_we_hilo    ;
+    wire [31:0] mem_memwb_hi         ;
+    wire [31:0] mem_memwb_lo         ;
+    wire        mem_memwb_LLbit_we   ;
+    wire        mem_memwb_LLbit_value;
     assign mem_id_we      = mem_memwb_we   ;
     assign mem_id_waddr   = mem_memwb_waddr;
     assign mem_id_wdata   = mem_memwb_wdata;
@@ -268,30 +270,42 @@ module openmips (
     assign mem_ex_hi      = mem_memwb_hi     ;
     assign mem_ex_lo      = mem_memwb_lo     ;
 
+    // MEM/WB -> MEM
+    wire memwb_mem_LLbit_we;
+    wire memwb_mem_LLbit_value;
+
+    // LLbit -> MEM
+    wire LLbit_mem_LLbit;
+
     // MEM
     stage_mem stage_mem (
-        .we        (exmem_mem_we      ),
-        .waddr     (exmem_mem_waddr   ),
-        .wdata     (exmem_mem_wdata   ),
-        .we_o      (mem_memwb_we      ),
-        .waddr_o   (mem_memwb_waddr   ),
-        .wdata_o   (mem_memwb_wdata   ),
-        .we_hilo   (exmem_mem_we_hilo ),
-        .hi        (exmem_mem_hi      ),
-        .lo        (exmem_mem_lo      ),
-        .we_hilo_o (mem_memwb_we_hilo ),
-        .hi_o      (mem_memwb_hi      ),
-        .lo_o      (mem_memwb_lo      ),
-        .aluop     (exmem_mem_aluop   ),
-        .mem_addr  (exmem_mem_mem_addr),
-        .opv2      (exmem_mem_opv2    ),
-        .mem_data  (ram_data          ),
-        .mem_addr_o(ram_addr          ),
-        .mem_sel   (ram_sel           ),
-        .mem_we    (ram_we            ),
-        .mem_data_o(ram_data_o        ),
-        .mem_ce    (ram_ce            ),
-        .rst       (rst               )
+        .we              (exmem_mem_we         ),
+        .waddr           (exmem_mem_waddr      ),
+        .wdata           (exmem_mem_wdata      ),
+        .we_o            (mem_memwb_we         ),
+        .waddr_o         (mem_memwb_waddr      ),
+        .wdata_o         (mem_memwb_wdata      ),
+        .we_hilo         (exmem_mem_we_hilo    ),
+        .hi              (exmem_mem_hi         ),
+        .lo              (exmem_mem_lo         ),
+        .we_hilo_o       (mem_memwb_we_hilo    ),
+        .hi_o            (mem_memwb_hi         ),
+        .lo_o            (mem_memwb_lo         ),
+        .aluop           (exmem_mem_aluop      ),
+        .mem_addr        (exmem_mem_mem_addr   ),
+        .opv2            (exmem_mem_opv2       ),
+        .mem_data        (ram_data             ),
+        .mem_addr_o      (ram_addr             ),
+        .mem_sel         (ram_sel              ),
+        .mem_we          (ram_we               ),
+        .mem_data_o      (ram_data_o           ),
+        .mem_ce          (ram_ce               ),
+        .LLbit_i         (LLbit_mem_LLbit      ),
+        .wb_LLbit_we_i   (memwb_mem_LLbit_we   ),
+        .wb_LLbit_value_i(memwb_mem_LLbit_value),
+        .LLbit_we_o      (mem_memwb_LLbit_we   ),
+        .LLbit_value_o   (mem_memwb_LLbit_value),
+        .rst             (rst                  )
     );
 
     // MEM/WB -> RegFile
@@ -307,23 +321,31 @@ module openmips (
     assign wb_ex_hi      = memwb_hilo_hi     ;
     assign wb_ex_lo      = memwb_hilo_lo     ;
 
+    // MEM/WB -> LLbit
+    wire memwb_LLbit_we;
+    wire memwb_LLbit_value;
+
     // MEM/WB
     reg_mem_wb reg_mem_wb (
-        .mem_we     (mem_memwb_we      ),
-        .mem_waddr  (mem_memwb_waddr   ),
-        .mem_wdata  (mem_memwb_wdata   ),
-        .wb_we      (memwb_reg_we      ),
-        .wb_waddr   (memwb_reg_waddr   ),
-        .wb_wdata   (memwb_reg_wdata   ),
-        .mem_we_hilo(mem_memwb_we_hilo ),
-        .mem_hi     (mem_memwb_hi      ),
-        .mem_lo     (mem_memwb_lo      ),
-        .wb_we_hilo (memwb_hilo_we_hilo),
-        .wb_hi      (memwb_hilo_hi     ),
-        .wb_lo      (memwb_hilo_lo     ),
-        .stall      (stall             ),
-        .clk        (clk               ),
-        .rst        (rst               )
+        .mem_we         (mem_memwb_we         ),
+        .mem_waddr      (mem_memwb_waddr      ),
+        .mem_wdata      (mem_memwb_wdata      ),
+        .wb_we          (memwb_reg_we         ),
+        .wb_waddr       (memwb_reg_waddr      ),
+        .wb_wdata       (memwb_reg_wdata      ),
+        .mem_we_hilo    (mem_memwb_we_hilo    ),
+        .mem_hi         (mem_memwb_hi         ),
+        .mem_lo         (mem_memwb_lo         ),
+        .wb_we_hilo     (memwb_hilo_we_hilo   ),
+        .wb_hi          (memwb_hilo_hi        ),
+        .wb_lo          (memwb_hilo_lo        ),
+        .stall          (stall                ),
+        .mem_LLbit_we   (mem_memwb_LLbit_we   ),
+        .mem_LLbit_value(mem_memwb_LLbit_value),
+        .wb_LLbit_we    (memwb_LLbit_we       ),
+        .wb_LLbit_value (memwb_LLbit_value    ),
+        .clk            (clk                  ),
+        .rst            (rst                  )
     );
 
     // RegFile
@@ -358,6 +380,16 @@ module openmips (
         .stallreq_ex(stallreq_ex),
         .stall      (stall),
         .rst        (rst)
+    );
+
+    // LLbit
+    reg_LLbit reg_LLbit (
+        .flush  (1'b0             ),
+        .LLbit_i(memwb_LLbit_value),
+        .we     (memwb_LLbit_we   ),
+        .LLbit_o(LLbit_mem_LLbit  ),
+        .clk    (clk              ),
+        .rst    (rst              )
     );
 
 endmodule // openmips

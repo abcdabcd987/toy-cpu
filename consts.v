@@ -68,6 +68,8 @@
 `define EXE_SW   6'b101011
 `define EXE_SWL  6'b101010
 `define EXE_SWR  6'b101110
+`define EXE_LL   6'b110000
+`define EXE_SC   6'b111000
 
 `define EXE_SYNC          6'b001111
 `define EXE_PREF          6'b110011

@@ -10,6 +10,7 @@ all: prepare \
 	inst_br_test \
 	inst_load_store_test \
 	inst_load_stall_test \
+	inst_ll_sc_test \
 
 prepare:
 	mkdir -p out
@@ -22,6 +23,7 @@ prepare:
 	(cd ../data && ./compile.py inst_br.s inst_br.txt)
 	(cd ../data && ./compile.py inst_load_store.s inst_load_store.txt)
 	(cd ../data && ./compile.py inst_load_stall.s inst_load_stall.txt)
+	(cd ../data && ./compile.py inst_ll_sc.s inst_ll_sc.txt)
 
 clean:
 	rm -rf out/ *.vcd
@@ -39,3 +41,4 @@ inst_jump_test: inst_jump_test.v ../*.v
 inst_br_test: inst_br_test.v ../*.v
 inst_load_store_test: inst_load_store_test.v ../*.v
 inst_load_stall_test: inst_load_stall_test.v ../*.v
+inst_ll_sc_test: inst_ll_sc_test.v ../*.v
