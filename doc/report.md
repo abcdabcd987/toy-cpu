@@ -86,7 +86,7 @@ end while (0)
 
 大家可以发现，这个宏的写法和 C 里面是完全一样的，甚至连 `do while(0)` 这个梗原样复制过来都没有问题。下面是一张效果图：
 
-![macro](https://github.com/abcdabcd987/toy-cpu/blob/master/doc/macro.gif?raw=true)
+![macro](https://github.com/abcdabcd987/toy-cpu/blob/master/doc/macro.png?raw=true)
 
 另外宏还可以去掉一部分重复代码，提高程序的可维护性。
 
